@@ -2,7 +2,7 @@
 
 from .base import *
 
-from .parametric_models import ParametricModel, SwitchingParametricModel
+from .parametric_models import IntervalParametricModel, SwitchingParametricModel
 
 from sage.all import var
 from sage.all import RIF
@@ -11,7 +11,7 @@ from sage.all import RIF
 var("T_S, T_H, T_A, T_F, C_S, C_H, C_A, C_F, I, T_R, G_S, G_H, G_B, G_F, V")
 
 
-twopincubator = ParametricModel(
+twopincubator = IntervalParametricModel(
     "T_S",
     [RIF("[20.0, 20.05]")],
     [(1/C_S)*(V*I - G_B*(T_S - T_R))],
@@ -25,7 +25,7 @@ twopincubator = ParametricModel(
 )
 
 
-fourpincubator = ParametricModel(
+fourpincubator = IntervalParametricModel(
     "T_H,T_A",
     [RIF("[21.0, 21.05]"), RIF("25.0")],
     [
@@ -44,7 +44,7 @@ fourpincubator = ParametricModel(
 )
 
 
-sevenpincubator = ParametricModel(
+sevenpincubator = IntervalParametricModel(
     "T_H,T_A,T_F",
     [RIF("[20.0, 20.05]"), RIF("20.0"), RIF("20.0")],
     [
@@ -68,7 +68,7 @@ sevenpincubator = ParametricModel(
 
 class SwitchingFourParameterModel(SwitchingParametricModel):
     def model_fn(self, x, state):
-        return ParametricModel(
+        return IntervalParametricModel(
             "t,T_H,T_A",
             x,
             [

@@ -1,4 +1,5 @@
 from .base import *
+from sage.all import RR
 
 import lbuc
 
@@ -8,17 +9,17 @@ from sage.symbolic.function_factory import function_factory
 
 
 class ParametricModel(lbuc.System, Model):
-    """A LBUC System defined based on a parametric set of ODEs."""
+    BaseField = None
     
     def __init__(self, vs : str, T0s : list, Ts : list, params : dict):
-        RR = sg.PolynomialRing(RIF, vs)
+        R = sg.PolynomialRing(self.BaseField, vs)
         self.vs = vs.split(',')
         self.Ts = Ts
         self.T0s = T0s
         self.params = params
-        TsRR = [RR(T.subs(**params)) for T in Ts]
-        super().__init__(RR, RR.gens(), T0s, TsRR)
-    
+        TsRR = [R(T.subs(**params)) for T in Ts]
+        super().__init__(R, R.gens(), T0s, TsRR)
+        
     @property
     def fns(self):
         return [
@@ -41,9 +42,14 @@ class ParametricModel(lbuc.System, Model):
     @property
     def ode_table(self):
         return sg.table([[ode] for ode in self.odes])
+
+    
+class IntervalParametricModel(ParametricModel):
+    """A LBUC System defined based on a parametric set of ODEs."""
+    BaseField = RIF
     
     def run(self):
-        x = self.x0
+        x = self.T0s
         trun = RIF('0')
         
         while True:
@@ -51,10 +57,10 @@ class ParametricModel(lbuc.System, Model):
             trun, x, _ = (yield x)
             print(f"running for {trun.str(style='brackets')} ...")
             # Take one continuous reachability step
-            reach = self.reach(trun)
+            reach = self.reach(trun, integration_method=lbuc.IntegrationMethod.LOW_DEGREE)
             yield reach
             x = reach(trun)
-
+    
 
 class SwitchingParametricModel(Model):
     """A model which switches between multiple different parametric models based on the values of different state 
@@ -62,18 +68,20 @@ class SwitchingParametricModel(Model):
     
     def __init__(self, x0):
         self.x0 = x0
+        self.BaseField = x0[0].base_ring()
         
     def model_fn(self, x, state):
         raise NotImplementedException()
                 
     def run(self):
         x = self.x0
-        trun = RIF("0")
+        trun = self.BaseField("0")
         
         while True:
             trun, x, state = (yield x)
-            print(f"running for {trun.str(style='brackets')} ...")
+            trun = self.BaseField(trun)
             # Take one continuous reachability step
-            reach = self.model_fn(x, state).reach(trun)
-            yield reach
-            x = reach(trun)
+            gen = self.model_fn(x, state).run()
+            next(gen)
+            yield (res := gen.send((trun, x, state)))
+            x = res(trun)
