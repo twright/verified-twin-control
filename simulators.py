@@ -41,9 +41,19 @@ class DiscreteSimulator:
             
             
 class HybridSimulator:
-    def __init__(self, model, controller):
+    def __init__(self, model, controller, controller_input_map=None, controller_output_map=None):
         self.model = model
         self.controller = controller
+        # Transfrom model state for input into controller
+        self.controller_input_map = (controller_input_map
+                                     if controller_input_map is not None
+                                     else (lambda x: x))
+        # Generate new model state based on original model state and 
+        # controller output (e.g. embed controller output in state)
+        # vector
+        self.controller_output_map = (controller_output_map
+                                      if controller_output_map is not None
+                                      else (lambda xin, x: x))
         
     def run(self, time_limit=RIF('Inf'), time_step=RIF('Inf')):
         # Model state
@@ -57,12 +67,12 @@ class HybridSimulator:
         # Use a suitable lower time limit for minimum simulation time to avoid failure
         # or loops at the end
         while 1e-5 <= time_limit.lower() - t.lower():
-            x = next(model_gen)
+            xin = x = next(model_gen)
             next(controller_gen)
-            trun, x, state = controller_gen.send(x)
+            trun, x, state = controller_gen.send(self.controller_input_map(x))
             yield state
             run_duration = RIF(min(trun.lower(), time_step.lower(), (time_limit - t).lower()),
                                min(trun.upper(), time_step.upper(), (time_limit - t).upper()))
-            yield model_gen.send((run_duration, x, state))
+            yield model_gen.send((run_duration, self.controller_output_map(xin, x), state))
             
             t = t + run_duration
