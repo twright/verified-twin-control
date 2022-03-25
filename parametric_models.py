@@ -1,11 +1,12 @@
 from .base import *
-from sage.all import RR
+from sage.all import RR, QQ
+import sage.all as sg
+from scipy.integrate import solve_ivp
+from sage.symbolic.function_factory import function_factory
 
 import lbuc
 
 from .simulation_framework import Model
-
-from sage.symbolic.function_factory import function_factory
 
 
 class ParametricModel(lbuc.System, Model):
@@ -60,7 +61,40 @@ class IntervalParametricModel(ParametricModel):
             reach = self.reach(trun, integration_method=lbuc.IntegrationMethod.LOW_DEGREE)
             yield reach
             x = reach(trun)
+
+            
+class NumericalParametricModel(ParametricModel):
+    """A LBUC System defined based on a parametric set of ODEs."""
+    BaseField = QQ
     
+    def run(self):
+        x = self.y0
+        trun = QQ(0)
+        
+        odes = sg.vector(self.y)
+        print(f"odes = {odes}")
+        R = self.R
+        f = lbuc.vec_to_numpy(R, odes)
+        jac = lbuc.mat_to_numpy(R, sg.jacobian(odes, R.gens()))
+        
+        while True:
+            # State does not matter
+            trun, x, _ = (yield x)
+            print(f"running for {trun} ...")
+            # Compute numerical solution for one step
+            print(f"x = {x}")
+            sln = solve_ivp(
+                f,
+                (0, trun),
+                x,
+                method='LSODA',
+                jac=jac,
+                vectorized=True,
+                dense_output=True,
+            )
+            yield sln
+            x = sln.sol(trun)
+            
 
 class SwitchingParametricModel(Model):
     """A model which switches between multiple different parametric models based on the values of different state 
@@ -75,7 +109,7 @@ class SwitchingParametricModel(Model):
                 
     def run(self):
         x = self.x0
-        trun = self.BaseField("0")
+        trun = self.BaseField(0)
         
         while True:
             trun, x, state = (yield x)

@@ -1,4 +1,6 @@
-from sage.all import RIF
+from sage.all import RIF, RR, QQ
+import sage.all as sg
+from scipy.integrate import solve_ivp
 
 from .simulation_framework import Simulator
 
@@ -20,6 +22,28 @@ class VerifiedContinuousSimulator(Simulator):
             
             x = next(gen)
             yield gen.send((time_step, x, self.state))
+            
+            t = t + run_duration
+            
+
+class NumericalContinuousSimulator(Simulator):
+    def __init__(self, state, model):
+        self.state = state
+        self.model = model
+        
+    def run(self, time_limit=RR("Inf"), time_step=RR("Inf")):
+        # Model state
+        t = QQ(0)
+        x = None
+        
+        gen = self.model.run()
+        
+        while t < time_limit:
+            run_duration = min(time_step, (time_limit - t))
+            print(f"run_duration = {run_duration}")
+                        
+            x = next(gen)
+            yield gen.send((run_duration, x, self.state))
             
             t = t + run_duration
             
