@@ -7,6 +7,7 @@ from sage.symbolic.function_factory import function_factory
 import lbuc
 
 from .simulation_framework import Model
+from .traces import VerifiedContinuousTrace, NumericalContinuousTrace
 
 
 class ParametricModel(lbuc.System, Model):
@@ -44,12 +45,13 @@ class ParametricModel(lbuc.System, Model):
     def ode_table(self):
         return sg.table([[ode] for ode in self.odes])
 
+
     
 class IntervalParametricModel(ParametricModel):
     """A LBUC System defined based on a parametric set of ODEs."""
     BaseField = RIF
     
-    def run(self):
+    def run_iter(self):
         x = self.T0s
         trun = RIF('0')
         
@@ -62,12 +64,16 @@ class IntervalParametricModel(ParametricModel):
             yield reach
             x = reach(trun)
 
+    @property
+    def TraceType(cls):
+        return VerifiedContinuousTrace
+
             
 class NumericalParametricModel(ParametricModel):
     """A LBUC System defined based on a parametric set of ODEs."""
     BaseField = QQ
     
-    def run(self):
+    def run_iter(self):
         x = self.y0
         trun = QQ(0)
         
@@ -94,20 +100,25 @@ class NumericalParametricModel(ParametricModel):
             )
             yield sln
             x = sln.sol(trun)
+
+    @property
+    def TraceType(cls):
+        return NumericalContinuousTrace
             
 
 class SwitchingParametricModel(Model):
     """A model which switches between multiple different parametric models based on the values of different state 
        variables."""
     
-    def __init__(self, x0):
+    def __init__(self, x0, **params):
         self.x0 = x0
         self.BaseField = x0[0].base_ring()
+        self.params = params
         
     def model_fn(self, x, state):
-        raise NotImplementedException()
+        raise NotImplementedError()
                 
-    def run(self):
+    def run_iter(self):
         x = self.x0
         trun = self.BaseField(0)
         
@@ -115,7 +126,13 @@ class SwitchingParametricModel(Model):
             trun, x, state = (yield x)
             trun = self.BaseField(trun)
             # Take one continuous reachability step
-            gen = self.model_fn(x, state).run()
+            gen = self.model_fn(x, state).run_iter()
             next(gen)
             yield (res := gen.send((trun, x, state)))
             x = res(trun)
+
+    @property
+    def TraceType(self):
+        return (VerifiedContinuousTrace
+                if self.BaseField is RIF
+                else NumericalContinuousTrace)
