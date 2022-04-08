@@ -36,13 +36,7 @@ class DiscreteTrace(Trace):
         assert all(isinstance(v, dict) for v in values)
 
 
-class PlottableMixin(metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def plot(self, variables: Tuple[str], **kwargs) -> 'sg.Graphics':
-        pass
-
-
-class ContinuousTrace(PlottableMixin, Trace, metaclass=abc.ABCMeta):
+class RealTimeTrace(Trace, metaclass=abc.ABCMeta):
     def __init__(self, domain: RIF, values):
         self._domain = domain
         super().__init__(values)
@@ -50,6 +44,14 @@ class ContinuousTrace(PlottableMixin, Trace, metaclass=abc.ABCMeta):
     @property
     def domain(self) -> RIF:
         return self._domain
+
+    @abc.abstractmethod
+    def plot(self, variables: Tuple[Any], **kwargs) -> 'sg.Graphics':
+        pass
+
+
+class ContinuousTrace(RealTimeTrace, metaclass=abc.ABCMeta):
+    pass
 
 
 class VerifiedContinuousTrace(ContinuousTrace):
@@ -100,15 +102,7 @@ class NumericalContinuousTrace(ContinuousTrace):
         )
 
 
-class HybridTrace(PlottableMixin, Trace):
-    def __init__(self, domain: RIF, values):
-        self._domain = domain
-        super().__init__(values)
-
-    @property
-    def domain(self) -> RIF:
-        return self._domain
-
+class HybridTrace(RealTimeTrace):
     @abc.abstractproperty
     def continuous_part(self) -> ContinuousTrace:
         raise NotImplementedError()
