@@ -119,7 +119,7 @@ class HybridSimulator(Simulator):
         
         # Use a suitable lower time limit for minimum simulation time to avoid failure
         # or loops at the end
-        while 1e-5 <= time_limit.lower() - t.lower():
+        while 1e-5 <= time_limit.lower() - t.lower() and len(x) > 0:
             xin = x
             print(f"x = {x}")
             next(controller_gen)
