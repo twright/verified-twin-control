@@ -23,7 +23,7 @@ class VerifiedContinuousSimulator(Simulator):
             run_duration = RIF(min(time_step.lower(), (time_limit - t).lower()), min(time_step.upper(), (time_limit - t).upper()))
             
             x = next(gen)
-            yield gen.send((time_step, x, self.state))
+            yield gen.send((run_duration, x, self.state))
             
             t = t + run_duration
 
