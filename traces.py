@@ -45,6 +45,10 @@ class RealTimeTrace(Trace, metaclass=abc.ABCMeta):
     def domain(self) -> RIF:
         return self._domain
 
+    @property
+    def time(self) -> RIF:
+        return self.domain.upper()
+
     @abc.abstractmethod
     def plot(self, variables: Tuple[Any], **kwargs) -> 'sg.Graphics':
         pass
