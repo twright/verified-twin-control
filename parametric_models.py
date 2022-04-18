@@ -13,14 +13,19 @@ from .traces import VerifiedContinuousTrace, NumericalContinuousTrace
 class ParametricModel(lbuc.System, Model):
     BaseField = None
     
-    def __init__(self, vs : str, T0s : list, Ts : list, params : dict):
-        R = sg.PolynomialRing(self.BaseField, vs)
+    def __init__(self, vs : str, T0s : list, Ts : list, params : dict, nonpoly=False, vars=None):
+        if nonpoly:
+            R = sg.SR
+        else:
+            R = sg.PolynomialRing(self.BaseField, vs)
+            vars = R.gens()
+        self.nonpoly = nonpoly
         self.vs = vs.split(',')
         self.Ts = Ts
         self.T0s = T0s
         self.params = params
         TsRR = [R(T.subs(**params)) for T in Ts]
-        super().__init__(R, R.gens(), T0s, TsRR)
+        super().__init__(R, vars, T0s, TsRR)
         
     @property
     def fns(self):
@@ -60,7 +65,10 @@ class IntervalParametricModel(ParametricModel):
             trun, x, _ = (yield x)
             print(f"running for {trun.str(style='brackets')} ...")
             # Take one continuous reachability step
-            reach = self.reach(trun, integration_method=lbuc.IntegrationMethod.LOW_DEGREE)
+            reach = self.reach(trun,
+                integration_method=(lbuc.IntegrationMethod.NONPOLY_TAYLOR
+                    if self.nonpoly
+                    else lbuc.IntegrationMethod.LOW_DEGREE))
             yield reach
             x = reach(trun)
 
