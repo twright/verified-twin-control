@@ -27,9 +27,9 @@ class VerifiedContinuousSimulator(Simulator):
             
             t = t + run_duration
 
-    def run(self, time_limit=RIF("Inf"), time_step=RIF("Inf")) -> VerifiedContinuousTrace:
+    def run(self, start_time=RIF("0"), time_limit=RIF("Inf"), time_step=RIF("Inf")) -> VerifiedContinuousTrace:
         return VerifiedContinuousTrace(
-            RIF(0, time_limit),
+            RIF(start_time, start_time + time_limit),
             self.run_iter(time_limit=time_limit, time_step=time_step),
         )
 
@@ -59,9 +59,9 @@ class NumericalContinuousSimulator(Simulator):
             
             t = t + run_duration
 
-    def run(self, time_limit=RIF("Inf"), time_step=RIF("Inf")) -> NumericalContinuousTrace:
+    def run(self, start_time=RIF(0), time_limit=RIF("Inf"), time_step=RIF("Inf")) -> NumericalContinuousTrace:
         return NumericalContinuousTrace(
-            RIF(0, time_limit),
+            RIF(start_time, start_time + time_limit),
             self.run_iter(time_limit=time_limit, time_step=time_step),
         )
 
@@ -136,9 +136,9 @@ class HybridSimulator(Simulator):
             
             t = t + run_duration
 
-    def run(self, time_limit=RIF("Inf"), time_step=RIF("Inf")) -> HybridTrace:
+    def run(self, start_time=RIF(0), time_limit=RIF("Inf"), time_step=RIF("Inf")) -> HybridTrace:
         return self.TraceType(
-            RIF(0, time_limit),
+            RIF(start_time, start_time + time_limit),
             self.run_iter(time_limit=time_limit, time_step=time_step),
         )
 
