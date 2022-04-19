@@ -119,7 +119,7 @@ class SwitchingFourParameterModelCAGB(SwitchingParametricModel):
         super().__init__(x0, **default_params)
 
     def model_fn(self, x, state):
-        print(f"regenerating model with x={[xi.str(style='brackets') for xi in x]}")
+        # print(f"regenerating model with x={[xi.str(style='brackets') for xi in x]}")
         return IntervalParametricModel(
             "t,T_H,T_A,C_A,G_B",
             x,

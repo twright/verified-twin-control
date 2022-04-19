@@ -121,11 +121,11 @@ class HybridSimulator(Simulator):
         # or loops at the end
         while 1e-5 <= time_limit.lower() - t.lower() and len(x) > 0:
             xin = x
-            print(f"x = {x}")
+            # print(f"x = {x}")
             next(controller_gen)
             trun, x, state = controller_gen.send(self.controller_input_map(x))
             x = self.controller_output_map(xin, x)
-            print(f"state = {state}")
+            # print(f"state = {state}")
             yield state
             run_duration = RIF(min(trun.lower(), time_step.lower(), (time_limit - t).lower()),
                                min(trun.upper(), time_step.upper(), (time_limit - t).upper()))

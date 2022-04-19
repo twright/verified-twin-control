@@ -63,7 +63,7 @@ class IntervalParametricModel(ParametricModel):
         while True:
             # State does not matter
             trun, x, _ = (yield x)
-            print(f"running for {trun.str(style='brackets')} ...")
+            # print(f"running for {trun.str(style='brackets')} ...")
             # Take one continuous reachability step
             reach = self.reach(trun,
                 integration_method=(lbuc.IntegrationMethod.NONPOLY_TAYLOR
@@ -86,7 +86,7 @@ class NumericalParametricModel(ParametricModel):
         trun = QQ(0)
         
         odes = sg.vector(self.y)
-        print(f"odes = {odes}")
+        # print(f"odes = {odes}")
         R = self.R
         f = lbuc.vec_to_numpy(R, odes)
         jac = lbuc.mat_to_numpy(R, sg.jacobian(odes, R.gens()))
