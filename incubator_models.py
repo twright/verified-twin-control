@@ -95,3 +95,42 @@ class SwitchingFourParameterModel(SwitchingParametricModel):
             ],
             self.params,
         )
+
+
+class SwitchingFourParameterModelCAGB(SwitchingParametricModel):
+    '''A variant of the four parameter models which exposes the 
+    C_A and G_B parameters as interval uncertain initial conditions.'''
+
+    def __init__(self, x0, **params):
+        default_params = {
+            "C_H": RIF("243.45802367"),
+            # "C_A": RIF("68.20829072"),
+            "V":   RIF("12.00"),
+            "I":   RIF("10.45"),
+            "T_R": RIF("21.25"),
+            "G_H": RIF("0.87095429"),
+            # "G_B": RIF("0.73572788"),
+        }
+        params_RIF = {
+            k: RIF(v)
+            for k,v in params.items()
+        }
+        default_params.update(params_RIF)
+        super().__init__(x0, **default_params)
+
+    def model_fn(self, x, state):
+        print(f"regenerating model with x={[xi.str(style='brackets') for xi in x]}")
+        return IntervalParametricModel(
+            "t,T_H,T_A,C_A,G_B",
+            x,
+            [
+                RIF(1),
+                (RIF(1)/C_H)*(int(state['heater_on'])*V*I - G_H*(T_H - T_A)),
+                (RIF(1)/C_A)*(G_H*(T_H - T_A) - G_B*(T_A - T_R)),
+                RIF(0), # C_A
+                RIF(0), # G_B
+            ],
+            self.params,
+            nonpoly=True,
+            vars=(t,T_H,T_A,C_A,G_B),
+        )
