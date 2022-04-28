@@ -179,11 +179,11 @@ class PeriodicOpenLoopController(BasicController):
         elif state['current_state'] == OpenLoopState.HEATING:
             new_state['heater_on'] = True
             new_state['current_state'] = OpenLoopState.COOLING
-            next_delay = RIF(self.n_samples_period - self.n_samples_heating)*self.step_size
+            next_delay = RIF(self.n_samples_heating)*self.step_size
         elif state['current_state'] == OpenLoopState.COOLING:
             new_state['heater_on'] = False
             new_state['current_state'] = OpenLoopState.HEATING
-            next_delay = RIF(self.n_samples_heating)*self.step_size
+            next_delay = RIF(self.n_samples_period - self.n_samples_heating)*self.step_size
         else:
             assert False
 
