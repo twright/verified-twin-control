@@ -133,6 +133,7 @@ class OpenLoopState(Enum):
     INITIALIZED = auto()
     HEATING = auto()
     COOLING = auto()
+    FIRST = auto()
 
 
 class PeriodicOpenLoopController(BasicController):
@@ -143,28 +144,44 @@ class PeriodicOpenLoopController(BasicController):
         self.n_samples_heating = n_samples_heating
         super().__init__({
             'heater_on': False,
-            'current_state': OpenLoopState.INITIALIZED,
+            'current_state': OpenLoopState.FIRST,
         })
 
     def control_step(self, t, state):
         new_state = dict(**state)
         next_delay = None
 
-        if state['current_state'] == OpenLoopState.INITIALIZED:
+        if state['current_state'] == OpenLoopState.FIRST:
+            next_delay = RIF("0")
+            new_state['current_state'] = OpenLoopState.INITIALIZED
+        elif state['current_state'] == OpenLoopState.INITIALIZED:
             new_state['heater_on'] = False
             if self.n_samples_heating > 0:
+                # Why do these values work?
+                next_delay = 2*RIF(self.step_size)
                 new_state['current_state'] = OpenLoopState.HEATING
-                next_delay = RIF(self.n_samples_heating)*self.step_size
+                # next_delay = RIF(self.n_samples_heating)*self.step_size
             else:
                 assert self.n_samples_heating == 0
                 new_state['current_state'] = OpenLoopState.COOLING
                 next_delay = RIF("Inf") # RIF(self.n_samples_period - self.n_samples_heating)*self.step_size
+        # if state['current_state'] == OpenLoopState.INITIALIZED:
+        #     new_state['heater_on'] = False
+        #     if self.n_samples_heating > 0:
+        #         new_state['current_state'] = OpenLoopState.HEATING
+        #         next_delay = RIF(self.n_samples_heating)*self.step_size
+        #         # new_state['current_state'] = OpenLoopState.COOLING
+        #         # next_delay = RIF(self.n_samples_period - self.n_samples_heating)*self.step_size
+        #     else:
+        #         assert self.n_samples_heating == 0
+        #         new_state['current_state'] = OpenLoopState.COOLING
+        #         next_delay = RIF("Inf") # RIF(self.n_samples_period - self.n_samples_heating)*self.step_size
         elif state['current_state'] == OpenLoopState.HEATING:
-            new_state['heater_on'] = False
+            new_state['heater_on'] = True
             new_state['current_state'] = OpenLoopState.COOLING
             next_delay = RIF(self.n_samples_period - self.n_samples_heating)*self.step_size
         elif state['current_state'] == OpenLoopState.COOLING:
-            new_state['heater_on'] = True
+            new_state['heater_on'] = False
             new_state['current_state'] = OpenLoopState.HEATING
             next_delay = RIF(self.n_samples_heating)*self.step_size
         else:
